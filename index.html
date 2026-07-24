@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Arzamas AR - Streltsy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    .arjs-loader {
+      height: 100%; width: 100%; position: absolute; top: 0; left: 0;
+      background-color: rgba(0,0,0,0.8); z-index: 9999;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .arjs-loader div { text-align: center; font-size: 1.1em; color: white; font-family: sans-serif; padding: 20px; }
+    #info-text {
+      position: fixed; bottom: 20px; left: 0; right: 0; text-align: center;
+      color: white; font-family: sans-serif; font-size: 14px;
+      background: rgba(0,0,0,0.5); padding: 10px; z-index: 999;
+    }
+    #err-box {
+      position: fixed; top: 10px; left: 10px; right: 10px;
+      color: #ff5555; font-family: monospace; font-size: 12px;
+      background: rgba(0,0,0,0.7); padding: 8px; z-index: 9998; display:none;
+    }
+  </style>
+</head>
+<body style="margin: 0; overflow: hidden;">
+  <div class="arjs-loader">
+    <div>Загрузка AR... Разрешите доступ к камере</div>
+  </div>
+  <div id="err-box"></div>
+
+  <a-scene
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+    vr-mode-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: false; colorManagement: true;"
+  >
+    <a-marker preset="hiro" id="marker">
+      <a-image
+        id="warrior"
+        src="assets/streltsy.png"
+        width="1.2"
+        height="2"
+        position="0 1 0"
+        rotation="-90 0 0"
+        animation="property: position; to: 0 1.15 0; dir: alternate; dur: 1800; loop: true; easing: easeInOutSine"
+      ></a-image>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <div id="info-text">Наведите камеру на маркер Hiro</div>
+
+  <script>
+    var loader = document.querySelector('.arjs-loader');
+    var errBox = document.querySelector('#err-box');
+
+    document.querySelector('a-scene').addEventListener('loaded', function () {
+      loader.style.display = 'none';
+    });
+
+    navigator.mediaDevices.getUserMedia({video: true})
+      .then(function() { console.log('Camera access granted'); })
+      .catch(function(err) {
+        errBox.style.display = 'block';
+        errBox.innerText = 'Ошибка камеры: ' + err.name + ' - ' + err.message;
+      });
+
+    window.addEventListener('error', function(e) {
+      errBox.style.display = 'block';
+      errBox.innerText = 'Ошибка: ' + e.message;
+    });
+  </script>
+</body>
+</html>
