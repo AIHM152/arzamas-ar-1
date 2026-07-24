@@ -1,1 +1,0 @@
-# arzamas-ar-1
