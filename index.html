@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Исторический AR</title>
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+<style>
+  body{margin:0;overflow:hidden;font-family:system-ui,sans-serif}
+  .hint{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:10;background:rgba(0,0,0,.7);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;white-space:nowrap;pointer-events:none}
+</style>
+</head>
+<body>
+  <div class="hint">Наведите камеру на метку AR1–AR13</div>
+
+  <!--
+    Barcode-метки ARToolKit (matrixCodeType: 3x3).
+    Файлы меток (marker-ar1.png ... marker-ar13.png) используются
+    только для печати/показа — движок распознаёт число внутри
+    картинки, имя файла метки в коде не участвует.
+
+    value=1  -> AR1  -> assets/01-grozny.png
+    value=2  -> AR2  -> assets/02-streltsy.png
+    value=3  -> AR3  -> assets/03-krepost.png
+    value=4  -> AR4  -> assets/04-vvedensky.png
+    value=5  -> AR5  -> assets/05-shimonah.png
+    value=6  -> AR6  -> assets/06-stupin.png
+    value=7  -> AR7  -> assets/07-shkola.png
+    value=8  -> AR8  -> assets/08-korinfsky.png
+    value=9  -> AR9  -> assets/09-sobor.png
+    value=10 -> AR10 -> assets/10-sogan.png
+    value=11 -> AR11 -> assets/11-sadik.png
+    value=12 -> AR12 -> assets/12-moskvin.png
+    value=13 -> AR13 -> assets/13-muzey.png
+  -->
+
+  <a-scene
+    embedded
+    vr-mode-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best;">
+
+    <a-assets timeout="15000">
+      <img id="grozny" src="assets/01-grozny.png" crossorigin="anonymous">
+      <img id="streltsy" src="assets/02-streltsy.png" crossorigin="anonymous">
+      <img id="krepost" src="assets/03-krepost.png" crossorigin="anonymous">
+      <img id="vvedensky" src="assets/04-vvedensky.png" crossorigin="anonymous">
+      <img id="shimonah" src="assets/05-shimonah.png" crossorigin="anonymous">
+      <img id="stupin" src="assets/06-stupin.png" crossorigin="anonymous">
+      <img id="shkola" src="assets/07-shkola.png" crossorigin="anonymous">
+      <img id="korinfsky" src="assets/08-korinfsky.png" crossorigin="anonymous">
+      <img id="sobor" src="assets/09-sobor.png" crossorigin="anonymous">
+      <img id="sogan" src="assets/10-sogan.png" crossorigin="anonymous">
+      <img id="sadik" src="assets/11-sadik.png" crossorigin="anonymous">
+      <img id="moskvin" src="assets/12-moskvin.png" crossorigin="anonymous">
+      <img id="muzey" src="assets/13-muzey.png" crossorigin="anonymous">
+    </a-assets>
+
+    <a-marker type="barcode" value="1">
+      <a-image src="#grozny" position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="2">
+      <a-image src="#streltsy" position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="3">
+      <a-image src="#krepost" position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="4">
+      <a-image src="#vvedensky" position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="5">
+      <a-image src="#shimonah" position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="6">
+      <a-image src="#stupin" position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="7">
+      <a-image src="#shkola" position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="8">
+      <a-image src="#korinfsky" position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="9">
+      <a-image src="#sobor" position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="10">
+      <a-image src="#sogan" position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="11">
+      <a-image src="#sadik" position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="12">
+      <a-image src="#moskvin" position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="13">
+      <a-image src="#muzey" position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+</body>
+</html>
