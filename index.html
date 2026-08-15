@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Исторический AR</title>
+
+<script>
+  (function patchGetUserMedia() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+    var original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = function (constraints) {
+      try {
+        if (constraints && constraints.video) {
+          if (typeof constraints.video !== 'object') {
+            constraints.video = { facingMode: constraints.video };
+          }
+          constraints.video.width = { ideal: 720 };
+          constraints.video.height = { ideal: 1280 };
+          constraints.video.zoom = { ideal: 1 };
+        }
+      } catch (e) { /* безопасно игнорируем */ }
+      return original(constraints);
+    };
+  })();
+</script>
+
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+<style>
+  html, body { margin: 0; overflow: hidden; height: 100%; background: #000; font-family: system-ui, sans-serif; }
+
+  /*
+    ИСПРАВЛЕНО: убрал transform: translate(-50%, -50%) и top/left: 50%,
+    которые были в прошлой версии — они конфликтовали с собственной
+    внутренней трансформацией, которую AR.js применяет к видео для
+    выравнивания с распознаванием метки, и видео "уезжало" за экран,
+    отсюда чёрный экран при живом видеопотоке.
+
+    Оставляем простое заполнение экрана с object-fit: contain —
+    показывает весь кадр камеры целиком (без обрезки), с чёрными
+    полосами там, где пропорции видео не совпадают с экраном.
+  */
+  video, canvas {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+
+  .hint{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:10;background:rgba(0,0,0,.7);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;white-space:nowrap;pointer-events:none}
+  .dbg{position:fixed;top:calc(10px + env(safe-area-inset-top));left:10px;z-index:10;background:rgba(0,0,0,.65);color:#0f0;font:12px monospace;padding:6px 10px;border-radius:8px;display:none;max-width:90vw;white-space:pre-wrap}
+</style>
+</head>
+<body>
+  <div class="hint">Наведите камеру на метку AR1–AR13</div>
+  <div class="dbg" id="dbg"></div>
+
+  <script>
+    var DEBUG = new URLSearchParams(location.search).get('debug') === '1';
+    if (DEBUG) document.querySelector('#dbg').style.display = 'block';
+
+    function log(msg) {
+      if (DEBUG) {
+        var el = document.querySelector('#dbg');
+        el.textContent = msg + '\n' + el.textContent;
+      }
+      console.log(msg);
+    }
+
+    (function reportActualStream() {
+      var tries = 0;
+      var maxTries = 20;
+      var interval = setInterval(function () {
+        tries++;
+        var video = document.querySelector('video');
+        var track = video && video.srcObject && video.srcObject.getVideoTracks
+          ? video.srcObject.getVideoTracks()[0]
+          : null;
+        if (track && track.readyState === 'live') {
+          var s = track.getSettings ? track.getSettings() : {};
+          log('Реальный поток камеры: ' + s.width + 'x' + s.height + ' | zoom: ' + s.zoom);
+          clearInterval(interval);
+        } else if (tries >= maxTries) {
+          clearInterval(interval);
+        }
+      }, 500);
+    })();
+
+    AFRAME.registerComponent('distance-scale', {
+      schema: {
+        reference: { type: 'number', default: 0.35 },
+        power: { type: 'number', default: 1.6 },
+        min: { type: 'number', default: 0.5 },
+        max: { type: 'number', default: 4 }
+      },
+      init: function () {
+        this.camPos = new THREE.Vector3();
+        this.objPos = new THREE.Vector3();
+      },
+      tick: function () {
+        var camera = this.el.sceneEl.camera;
+        if (!camera) return;
+        camera.getWorldPosition(this.camPos);
+        this.el.object3D.getWorldPosition(this.objPos);
+        var dist = this.camPos.distanceTo(this.objPos);
+        var scale = Math.pow(dist / this.data.reference, this.data.power);
+        scale = Math.min(this.data.max, Math.max(this.data.min, scale));
+        this.el.object3D.scale.set(scale, scale, scale);
+      }
+    });
+  </script>
+
+  <a-scene
+    embedded
+    vr-mode-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: true; colorManagement: true;"
+    arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best;">
+
+    <a-assets timeout="15000">
+      <img id="grozny" src="assets/01-grozny.png" crossorigin="anonymous">
+      <img id="streltsy" src="assets/02-streltsy.png" crossorigin="anonymous">
+      <img id="krepost" src="assets/03-krepost.png" crossorigin="anonymous">
+      <img id="vvedensky" src="assets/04-vvedensky.png" crossorigin="anonymous">
+      <img id="shimonah" src="assets/05-shimonah.png" crossorigin="anonymous">
+      <img id="stupin" src="assets/06-stupin.png" crossorigin="anonymous">
+      <img id="shkola" src="assets/07-shkola.png" crossorigin="anonymous">
+      <img id="korinfsky" src="assets/08-korinfsky.png" crossorigin="anonymous">
+      <img id="sobor" src="assets/09-sobor.png" crossorigin="anonymous">
+      <img id="sogan" src="assets/10-sogan.png" crossorigin="anonymous">
+      <img id="sadik" src="assets/11-sadik.png" crossorigin="anonymous">
+      <img id="moskvin" src="assets/12-moskvin.png" crossorigin="anonymous">
+      <img id="muzey" src="assets/13-muzey.png" crossorigin="anonymous">
+    </a-assets>
+
+    <a-marker type="barcode" value="1" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#grozny" distance-scale position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="2" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#streltsy" distance-scale position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="3" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#krepost" distance-scale position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="4" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#vvedensky" distance-scale position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="5" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#shimonah" distance-scale position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="6" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#stupin" distance-scale position="0 2.0 0" rotation="-90 0 0" width="1.6" height="4.2" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="7" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#shkola" distance-scale position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="8" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#korinfsky" distance-scale position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="9" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#sobor" distance-scale position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="10" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#sogan" distance-scale position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="11" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#sadik" distance-scale position="0 1.6 0" rotation="-90 0 0" width="2.0" height="3.4" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="12" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#moskvin" distance-scale position="0 1.7 0" rotation="-90 0 0" width="2.2" height="3.3" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+    <a-marker type="barcode" value="13" smooth="true" smooth-count="25" smooth-tolerance="0.003" smooth-threshold="10">
+      <a-image src="#muzey" distance-scale position="0 1.0 0" rotation="-90 0 0" width="2.8" height="2.1" transparent="true" material="shader: flat; transparent: true; side: double"></a-image>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+</body>
+</html>
