@@ -6,20 +6,6 @@
 <meta name="theme-color" content="#000000">
 <title>Исторический AR</title>
 
-<!--
-  Подтверждено тестами: на некоторых Android-телефонах (Xiaomi 12,
-  Xiaomi 15T) виртуальная "камера окружения", которую видит браузер,
-  жёстко зафиксирована на разрешении ~1920x1760 (почти квадрат) —
-  запрос другого width/height через getUserMedia игнорируется на
-  уровне драйвера/HAL телефона. Значит управлять реальным разрешением
-  камеры через JS на этих устройствах невозможно.
-
-  Раз саму камеру подстроить не получается, решаем проблему на
-  уровне отображения: object-fit: contain вместо cover — показываем
-  ВЕСЬ кадр камеры целиком (без обрезки по краям), с чёрными полосами
-  там, где пропорции не совпадают, вместо агрессивной обрезки/зума.
-  Для сканирования метки это важнее, чем красивая картинка без полос.
--->
 <script>
   (function patchGetUserMedia() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
@@ -45,11 +31,21 @@
 <style>
   html, body { margin: 0; overflow: hidden; height: 100%; background: #000; font-family: system-ui, sans-serif; }
 
+  /*
+    ИСПРАВЛЕНО: убрал transform: translate(-50%, -50%) и top/left: 50%,
+    которые были в прошлой версии — они конфликтовали с собственной
+    внутренней трансформацией, которую AR.js применяет к видео для
+    выравнивания с распознаванием метки, и видео "уезжало" за экран,
+    отсюда чёрный экран при живом видеопотоке.
+
+    Оставляем простое заполнение экрана с object-fit: contain —
+    показывает весь кадр камеры целиком (без обрезки), с чёрными
+    полосами там, где пропорции видео не совпадают с экраном.
+  */
   video, canvas {
     position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
+    top: 0 !important;
+    left: 0 !important;
     width: 100% !important;
     height: 100% !important;
     object-fit: contain !important;
