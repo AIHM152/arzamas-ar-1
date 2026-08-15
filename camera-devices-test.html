@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Список камер устройства</title>
+<style>
+  html, body { margin: 0; background: #111; color: #0f0; font: 14px monospace; }
+  .box { padding: 14px; white-space: pre-wrap; }
+  video { width: 100%; max-width: 400px; display: block; margin: 10px 0; border: 2px solid #0f0; }
+  button { padding: 8px 14px; margin: 4px 4px 12px 0; font: 14px monospace; }
+</style>
+</head>
+<body>
+  <div class="box" id="log">Запрашиваю доступ к камере для получения списка устройств...</div>
+  <div id="buttons"></div>
+  <video id="video" autoplay playsinline muted></video>
+
+  <script>
+    var log = document.getElementById('log');
+    var buttons = document.getElementById('buttons');
+    var video = document.getElementById('video');
+    function print(msg) { log.textContent += '\n' + msg; console.log(msg); }
+
+    function startCamera(deviceId, label) {
+      var constraints = deviceId
+        ? { video: { deviceId: { exact: deviceId } }, audio: false }
+        : { video: { facingMode: { ideal: 'environment' } }, audio: false };
+
+      navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+        video.srcObject = stream;
+        var track = stream.getVideoTracks()[0];
+        var settings = track.getSettings ? track.getSettings() : {};
+        var caps = track.getCapabilities ? track.getCapabilities() : {};
+        print('--- Активна: ' + (label || 'дефолтная камера') + ' ---');
+        print('Разрешение: ' + settings.width + 'x' + settings.height);
+        print('zoom сейчас: ' + settings.zoom + ' | диапазон: ' +
+          (caps.zoom ? caps.zoom.min + '-' + caps.zoom.max : 'нет'));
+      }).catch(function (err) {
+        print('Ошибка запуска "' + label + '": ' + err.message);
+      });
+    }
+
+    // Сначала запрашиваем дефолтный доступ, чтобы получить разрешение
+    // и увидеть подписанные (не пустые) label устройств.
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then(function (initialStream) {
+        initialStream.getTracks().forEach(function (t) { t.stop(); });
+        return navigator.mediaDevices.enumerateDevices();
+      })
+      .then(function (devices) {
+        var cams = devices.filter(function (d) { return d.kind === 'videoinput'; });
+        log.textContent = 'Найдено камер: ' + cams.length;
+        cams.forEach(function (cam, i) {
+          print((i + 1) + '. ' + (cam.label || '(без названия)') + ' | deviceId: ' + cam.deviceId.slice(0, 12) + '...');
+          var btn = document.createElement('button');
+          btn.textContent = 'Тест камеры ' + (i + 1);
+          btn.onclick = function () { startCamera(cam.deviceId, cam.label || ('Камера ' + (i + 1))); };
+          buttons.appendChild(btn);
+        });
+        var btnDefault = document.createElement('button');
+        btnDefault.textContent = 'Тест: facingMode environment (как сейчас)';
+        btnDefault.onclick = function () { startCamera(null, 'facingMode environment'); };
+        buttons.appendChild(btnDefault);
+      })
+      .catch(function (err) {
+        print('Ошибка: ' + err.message);
+      });
+  </script>
+</body>
+</html>
